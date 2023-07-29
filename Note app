@@ -1,0 +1,204 @@
+#start to create smart notes app
+#import PyQt
+from PyQt5.QtCore import Qt
+#import classes needed for the project
+from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox, QPushButton, QLabel, QVBoxLayout,QHBoxLayout,QInputDialog,QGroupBox,QButtonGroup,QTextEdit,QListWidget,QLineEdit
+import json
+
+
+#create a dictionary
+dict_note = {
+    "Hello":{
+        "text": "Hello",
+        "tags":["Hello","something else"],
+        "passes": []
+    }
+}
+
+#add or dump the data of the dictionary to a json file
+with open("dict_note.json","w") as file:
+    json.dump(dict_note,file)
+
+
+
+app = QApplication([])
+my_window = QWidget()
+my_window.setWindowTitle("7u5t 4 n0t3 ")
+my_window.resize(900,700)
+
+#adding the classes
+#QLable(lable a text in the app)
+text_notes = QLabel("List of notes")
+text_tags = QLabel("List of tags")
+
+#QPushButton()
+button1 = QPushButton("Create note")
+button2 = QPushButton("Delete note")
+button3 = QPushButton("Save note")
+button4 = QPushButton("Add to note")
+button5 = QPushButton("Untag from note")
+button6 = QPushButton("Search notes by tag")
+
+
+text_edit = QTextEdit()
+line_edit = QLineEdit()
+
+
+text_edit.setPlaceholderText("Type your note here...")
+line_edit.setPlaceholderText("Search and add tags...")
+
+
+
+
+list_wid1 = QListWidget()
+list_wid2 = QListWidget()
+
+
+#designing the app
+col = QVBoxLayout()
+col2 = QVBoxLayout()
+row1 = QHBoxLayout()
+row2 = QHBoxLayout()
+
+
+row1.addWidget(button1)
+row1.addWidget(button2)
+
+
+row2.addWidget(button4)
+row2.addWidget(button5)
+
+
+
+col.addWidget(text_edit)
+col2.addWidget(text_notes)
+col2.addWidget(list_wid1)
+col2.addLayout(row1)
+col2.addWidget(button3)
+col2.addWidget(text_tags)
+col2.addWidget(list_wid2)
+col2.addWidget(line_edit)
+col2.addLayout(row2)
+col2.addWidget(button6)
+
+
+
+masterlayout = QHBoxLayout()
+masterlayout.addLayout(col)
+masterlayout.addLayout(col2)
+
+my_window.setLayout(masterlayout)
+
+
+
+#funtions valley
+
+
+
+def show_note():
+    key = list_wid1.selectedItems()[0].text()
+    text_edit.setText(dict_note[key]["text"])
+    list_wid2.clear()
+    list_wid2.addItems(dict_note[key]["tags"])
+list_wid1.itemClicked.connect(show_note)
+
+
+
+def add_note():
+    note_name, ok = QInputDialog.getText(my_window,"Create note","Note name:")
+    if ok and note_name != "":
+        dict_note[note_name]={"text":"","tags":[]}
+        list_wid1.clear()
+        list_wid1.addItems(dict_note)
+        list_wid2.addItems(dict_note[note_name]["tags"])
+        with open("dict_note.json","w") as file:
+            json.dump(dict_note,file,sort_keys=True)
+    else:
+        print("Cannot leave empty!")
+
+
+def save_note():
+    if list_wid1.selectedItems():
+        key = list_wid1.selectedItems()[0].text()
+        dict_note[key]["text"] = text_edit.toPlainText()
+        with open("dict_note.json","w") as file:
+            json.dump(dict_note,file,sort_keys=True)  
+    else:
+        print("Cannot leave empty!")
+
+
+def delete_note():
+    if list_wid1.selectedItems():
+        key = list_wid1.selectedItems()[0].text()
+        del dict_note[key]
+        list_wid2.clear()
+        list_wid1.clear()
+        list_wid1.addItems(dict_note)
+        with open("dict_note.json","w") as file:
+            json.dump(dict_note,file,sort_keys=True)   
+    else:
+        print("Nothing to delete...")      
+
+
+def add_tag():
+    if list_wid1.selectedItems():
+        key = list_wid1.selectedItems()[0].text()
+        tag = line_edit.text()
+        if not tag in dict_note[key]["tags"]:
+            dict_note[key]["tags"].append(tag)
+            list_wid2.addItem(tag)
+            line_edit.clear()
+    else:
+        print("Cannot leave empty!")
+
+
+def delete_tag():
+    if list_wid2.selectedItems():
+        key = list_wid1.selectedItems()[0].text()
+        tag = list_wid2.selectedItems()[0].text()
+        dict_note[key]["tags"].remove(tag)
+        list_wid2.clear()
+        list_wid2.addItems(dict_note[key]["tags"])
+        with open("dict_note.json","w") as file:
+            json.dump(dict_note,file,sort_keys=True)
+
+
+def search_tag():
+    tag = line_edit.text()
+    if button6.text() == "Search notes by tag" and tag:
+        new_notes = {}
+        for note in dict_note:
+            if tag in dict_note[note]["tags"]:
+                new_notes[note] = dict_note[note]
+        button6.setText("Reset")
+        list_wid1.clear()
+        list_wid2.clear()
+        list_wid1.addItems(new_notes)
+    elif button6.text() == "Reset":
+        list_wid1.clear()
+        list_wid2.clear()
+        line_edit.clear()        
+        list_wid1.addItems(dict_note)
+        button6.setText("Search notes by tag")
+    else:
+        pass
+
+
+
+button1.clicked.connect(add_note)
+button2.clicked.connect(delete_note)
+button3.clicked.connect(save_note)
+button4.clicked.connect(add_tag)
+button5.clicked.connect(delete_tag)
+button6.clicked.connect(search_tag)
+
+
+
+with open("dict_note.json","r") as file:
+    data = json.load(file)
+list_wid1.addItems(dict_note)
+
+
+
+my_window.show()
+app.exec_()
